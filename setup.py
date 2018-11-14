@@ -5,5 +5,6 @@ setup(
     version='0.1dev',
     packages=['SetMem',],
     license='',
-    long_description=open('README.txt').read(),
+    url='https://pypi.org/SetMem',
+    long_description=open('README.md').read(),
 )
