@@ -12,8 +12,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import multiprocessing
+import pickle as pk
 
 class Dataset():
+    """Data Object holding a Data Set for Set Membership Estimation.
+    
+    # Arguments
+        name: Name for Set of Set Membership Reference Points, not function,
+            simply for documentation
+        X: Matrix of Regressors, shape = (timestep,regressors)
+        Y: Vector of Targets, shape = (timestep,targets)
+        t: Time vector, shape = (timestep,1)
+        Y_pred: Vector of Prediction for this Data Set, shape = (timestep,1)
+        scale_X: Normalization factors for Regressor Matrix
+        scale_Y: Normalization factors for Target Vector
+        N: Number of time steps in Data Set
+        n_u: Number of Regressors
+        n_y: Number of Outputs
+    """
     
     def __init__(self,X,Y,t,dt=None,scale_X=None,scale_Y=None,name=None):
         
@@ -28,6 +44,13 @@ class Dataset():
         self.N = self.X.shape[0]
         self.n_u = self.X.shape[1]
         self.n_y = self.Y.shape[1]
+    
+    def __str__(self):
+        string = 'Data Set Object\n'
+        string = string + 'X: Input Matrix with shape=({:d},{:d})\n'.format(self.X.shape[0],self.X.shape[1])
+        string = string + 'v: Target Matrix with shape=({:d},{:d})\n'.format(self.Y.shape[0],self.Y.shape[1])
+        string = string + 't: Time Vector with shape=({:d},{:d})'.format(self.t.shape[0],self.t.shape[1])
+        return string
     
     def plot_Y(self):
         plt.figure()
@@ -46,6 +69,16 @@ class Dataset():
             plt.title('Inputs X of ' + self.name)
 
 class SMemPoints():
+    """Data Object holding the Reference Points for the Set Membership Estimation.
+    
+    # Arguments
+        name: Name for Set of Set Membership Reference Points, not function,
+            simply for documentation
+        phi: Matrix of Regressors, including the window over past m time stesps,
+            shape = (timestep,regressors)
+        v: Vector of Targets, shape = (timestep,1)
+        t: Time vector, shape = (timestep,1)
+    """
     
     def __init__(self,phi,v,t,name=None):
         
@@ -53,7 +86,17 @@ class SMemPoints():
         self.t = t
         self.phi = phi
         self.v = v
-
+    
+    def __str__(self):
+        string = 'SMemPoints Object\n'
+        string = string + 'phi: Regressor Matrix with shape=({:d},{:d})\n'.format(self.phi.shape[0],self.phi.shape[1])
+        string = string + 'v:   Target Vector with shape=({:d},{:d})\n'.format(self.v.shape[0],self.v.shape[1])
+        string = string + 't:   Time Vector with shape=({:d},{:d})'.format(self.t.shape[0],self.t.shape[1])
+        return string
+#    
+#    def __repr__(self):
+#        self.__str__()
+        
 class Estimator_f_b():
     
     def __init__(self,f_b=None,pred_train=None,pred_val=None,pred_test=None):
@@ -114,6 +157,42 @@ class SetMembershipEstimator():
 #                N = self.v_val.N
 #            elif mode == 'test':
 #                N = self.v_test.N
+    
+    def __str__(self):
+        string = 'Set Membership Estimator\n'
+        # Data
+        if self.v_train is not(None):
+            string = string + ' v_train -       [X ({:d},{:d}), '.format(self.v_train.X.shape[0],self.v_train.X.shape[1])
+            string = string + 'Y ({:d},{:d}), '.format(self.v_train.Y.shape[0],self.v_train.Y.shape[1])
+            string = string + 't ({:d},{:d})]\n'.format(self.v_train.t.shape[0],self.v_train.t.shape[1])
+        if self.v_val is not(None):
+            string = string + ' v_val -         [X ({:d},{:d}), '.format(self.v_val.X.shape[0],self.v_val.X.shape[1])
+            string = string + 'Y ({:d},{:d}), '.format(self.v_val.Y.shape[0],self.v_val.Y.shape[1])
+            string = string + 't ({:d},{:d})]\n'.format(self.v_val.t.shape[0],self.v_val.t.shape[1])
+        if self.v_test is not(None):
+            string = string + ' v_test -        [X ({:d},{:d}), '.format(self.v_test.X.shape[0],self.v_test.X.shape[1])
+            string = string + 'Y ({:d},{:d}), '.format(self.v_test.Y.shape[0],self.v_test.Y.shape[1])
+            string = string + 't ({:d},{:d})]\n'.format(self.v_test.t.shape[0],self.v_test.t.shape[1])
+        # Residual Data
+        if self.delta_v_train is not(None):
+            string = string + ' delta_v_train - [X ({:d},{:d}), '.format(self.delta_v_train.X.shape[0],self.delta_v_train.X.shape[1])
+            string = string + 'Y ({:d},{:d}), '.format(self.delta_v_train.Y.shape[0],self.delta_v_train.Y.shape[1])
+            string = string + 't ({:d},{:d})]\n'.format(self.delta_v_train.t.shape[0],self.delta_v_train.t.shape[1])
+        if self.delta_v_val is not(None):
+            string = string + ' delta_v_val -   [X ({:d},{:d}), '.format(self.delta_v_val.X.shape[0],self.delta_v_val.X.shape[1])
+            string = string + 'Y ({:d},{:d}), '.format(self.delta_v_val.Y.shape[0],self.delta_v_val.Y.shape[1])
+            string = string + 't ({:d},{:d})]\n'.format(self.delta_v_val.t.shape[0],self.delta_v_val.t.shape[1])
+        if self.delta_v_test is not(None):
+            string = string + ' delta_v_test -  [X ({:d},{:d}), '.format(self.delta_v_test.X.shape[0],self.delta_v_test.X.shape[1])
+            string = string + 'Y ({:d},{:d}), '.format(self.delta_v_test.Y.shape[0],self.delta_v_test.Y.shape[1])
+            string = string + 't ({:d},{:d})]\n'.format(self.delta_v_test.t.shape[0],self.delta_v_test.t.shape[1])
+        # Set Membership Points
+        if self.SetMemPoints is not(None):
+            string = string + ' SMemPoints -    [phi ({:d},{:d}), '.format(self.SetMemPoints.phi.shape[0],self.SetMemPoints.phi.shape[1])
+            string = string + 'v ({:d},{:d}), '.format(self.SetMemPoints.v.shape[0],self.SetMemPoints.v.shape[1])
+            string = string + 't ({:d},{:d})]\n'.format(self.SetMemPoints.t.shape[0],self.SetMemPoints.t.shape[1])
+            
+        return string
     
     def get_regressor_dataset(self,mode=None,residual=False):
         if residual:
@@ -540,3 +619,20 @@ class SMemEst_FSS_Toolkit():
 #        plt.legend(['targets','FFS border','f_upper'])
 #        plt.xlabel('Timestep k')
 #        plt.grid()
+
+class Saver():
+    
+    def __init__(self,Estimator=None):
+        
+        self.Estimator=Estimator
+    
+    def save(self,filename):
+        print('Saving Estimator.')
+        with open(filename+'.pkl', 'wb') as output:
+            pk.dump(self.Estimator, output, pk.HIGHEST_PROTOCOL)
+    
+    def load(self,filename):
+        print('Loading Estimator.')
+        with open(filename+'.pkl', 'rb') as input:
+            self.Estimator = pk.load(input)
+        return self.Estimator
