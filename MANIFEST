@@ -2,3 +2,4 @@
 README.txt
 setup.py
 SetMem\SetMemLib.py
+SetMem\__init__.py
